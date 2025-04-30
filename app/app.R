@@ -6,14 +6,36 @@
 #
 #    http://shiny.rstudio.com/
 #
+# 
+# Copyright © 2025, Umeå Plant Science Center, Swedish University Of Agricultural Sciences, Umeå, Sweden
+# All rights reserved.
+# 
+# Developers: Adrien Heymans
+# 
+# Redistribution and use in source and binary forms, with or without modification, are permitted under the GNU General Public License v3 and provided that the following conditions are met:
+#   
+#   1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+# 
+# 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+# 
+# 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+# 
+# Disclaimer
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# You should have received the GNU GENERAL PUBLIC LICENSE v3 with this file in license.txt but can also be found at http://www.gnu.org/licenses/gpl-3.0.en.html
+# 
+# NOTE: The GPL.v3 license requires that all derivative work is distributed under the same license. That means that if you use this source code in any other program, you can only distribute that program with the full source code included and licensed under a GPL license.
+
+
 
 library(shiny)
-# devtools::install_github("granar/granar")
-# devtools::install_github("leonardojo/ggPlantmap")
-library(granar)
-library(ggPlantmap)
 library(tidyverse)
 source("./R/prep_geo.R")
+source("./R/get_root_section.R")
+source("./R/write_geo.R")
+`%!in%` <- compose(`!`, `%in%`)
 
 # Anatomy to mesh
 ui <- fluidPage(
@@ -46,7 +68,7 @@ ui <- fluidPage(
         conditionalPanel(
           condition = "input.input_mode == 'Built-in anatomies'",
           selectInput("choice", "Choose an anatomical sample:",
-                      choices = c("root cross section","root tip", "apical meristem", "embryon")                      )
+                      choices = c("root cross section","root tip", "apical meristem", "embryon", "pavement cells")                      )
         ),
         
         
@@ -85,29 +107,45 @@ server <- function(input, output, session) {
     req(input$dpi)
     if (input$input_mode == "Upload XML") {
       req(input$xml_file)
-      section = granar::get_root_section(input$xml_file$datapath)%>%
+      section = get_root_section(input$xml_file$datapath)%>%
         mutate(x = x/input$dpi, y = -y/input$dpi)
     }else if(input$input_mode == "Built-in anatomies"){
       req(input$choice)
       if (input$choice == "root cross section"){
-        section = granar::get_root_section("./www/Arabido4bis.xml")%>%
+        section = get_root_section("./www/Arabido4bis.xml")%>%
           mutate(x = x*0.16, y= y*0.16)
       }
       if (input$choice == "root tip"){
-        section = granar::get_root_section("./www/root_tip.xml")%>%
+        section = get_root_section("./www/root_tip.xml")%>%
           mutate(x = x*0.16, y= y*0.16)
       }
       if(input$choice == "apical meristem"){
-        section = granar::get_root_section("./www/shoot_apex.xml")%>%
+        section = get_root_section("./www/shoot_apex.xml")%>%
           mutate(x = x/2, y= y/2)
       }
       if(input$choice == "embryon"){
-        section = granar::get_root_section("./www/embryon.xml")%>%
+        section = get_root_section("./www/embryon.xml")%>%
           mutate(x = x*0.16, y= y*0.16)
+      }
+      if(input$choice == "pavement cells"){
+        section = NULL
+        roi_sampl = list.files("./www/",pattern = ".roi", full.names = T)
+        for (fl in roi_sampl) {
+            section <- rbind(section, get_cell(fl))
+        }
+        binder = tibble(id_cell = sort(unique(section$id_cell)), 
+                        type = c("pavement", "pavement", "pavement",
+                                 "C1", "M", "C1", "C2", "M", "pavement", "pavement", "pavement",
+                                 "M", "GC", "GC"))
+        section = section%>%mutate(x =  x/2.5, y = -y/2.5)%>%
+          left_join(binder, by = "id_cell")
+        id_global = tibble(id_global  = 1:length(unique(section$id_cell)), id_cell = unique(section$id_cell))
+        section = left_join(section, id_global, by = "id_cell")%>%
+          mutate(id_cell = id_global)%>%select(-id_global)
       }
       
     }else if(input$input_mode == "Upload ROIs"){
-      req(input$all_roi_files)
+      req(input$all_roi_files$datapath)
       section = NULL
       for(fl in input$all_roi_files$datapath){
         section = rbind(section, get_cell(fl))
@@ -120,6 +158,7 @@ server <- function(input, output, session) {
   # Show original anatomy
   output$anatomy_plot <- renderPlot({
     req(root_data())
+    print("anatomical data loaded")
     root_data()%>%
       ggplot()+
       geom_polygon(aes(x,y, group = id_cell, fill = type), colour = "white")+
@@ -137,22 +176,24 @@ server <- function(input, output, session) {
   # Run geometry prep
   geo_data <- eventReactive(input$prep_btn, {
     req(root_data(),input$input_mode, input$choice,input$thickness, input$corner)
+    section = root_data()
     if(input$input_mode == "Upload XML"){
-      granar::prep_geo(root_data(), cell_wall_thickness = input$thickness, corner_smoothing = input$corner)
+      geo = prep_geo(section, cell_wall_thickness = input$thickness, corner_smoothing = input$corner)
     }else if(input$input_mode == "Upload ROIs"){
-      prep_geo(root_data(), cell_wall_thickness = 
+      geo = prep_geo(section, cell_wall_thickness = 
                    tibble(type =c("outerwall", "default"),
                           value = c(input$thickness+1,input$thickness)), 
                  corner_smoothing = input$corner)
       }else{
-        prep_geo(root_data(), cell_wall_thickness = 
+        geo = prep_geo(section, cell_wall_thickness = 
                    tibble(type =c("outerwall", "default"),
                           value = c(input$thickness,input$thickness)), 
                  corner_smoothing = input$corner)
       }
-    
+    return(geo)
   })
   
+
   # Show preprocessed geometry
   output$geo_plot <- renderPlot({
     req(geo_data())
@@ -176,7 +217,7 @@ server <- function(input, output, session) {
       geom_polygon(aes(x,y, group = id_cell), size = 0.2,colour = "blue", fill = "white", data = geo_data()%>%filter(id_cell == center_cell_id ))+
       viridis::scale_fill_viridis()+
       geom_segment(aes(x = scale_bar[1], xend = scale_bar[2], y = scale_bar[3], yend = scale_bar[3]),
-                   size = 2)+
+                   linewidth = 2)+
       geom_text(aes(x = (scale_bar[2]+scale_bar[1])/2, y= scale_bar[4]),
                     label = paste0(scale_dist))+
       theme_classic()+
