@@ -1,3 +1,4 @@
+[![DOI](https://zenodo.org/badge/971190779.svg)](https://doi.org/10.5281/zenodo.15309368)
 
 # Anatomeshr
 
