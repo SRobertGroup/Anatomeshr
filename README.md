@@ -3,10 +3,9 @@
 
 > _A converter of 2D plant anatomical data into finite element mesh (GEO) format_
 
-**Lead Development:**  
-Adrien Heymans
-**Contributors:** 
-Ioannis Theodorou, Grégoire Loupit, Vinod Kumar, Gonzalo Revilla, Olivier Ali, Stéphanie Robert, Stéphane Verger
+**Lead development:**  Adrien Heymans
+
+**Contributors:** Ioannis Theodorou, Grégoire Loupit, Vinod Kumar, Gonzalo Revilla, Olivier Ali, Stéphanie Robert, Stéphane Verger
 
 ---
 
@@ -26,7 +25,6 @@ This tool bridges high-resolution anatomical imaging (CellSeT, ImageJ) and simul
   - Cell Tags to easily mark boundary conditions 
 - Seamless integration with finite element software (e.g., Fenics/BVPy)
 
----
 
 ## 2. Installation
 
@@ -63,8 +61,6 @@ docker run -p 3838:3838 heymansadrien/anatomeshr:0.0.6
 
 App will be available at: [http://localhost:3838](http://localhost:3838)
 
----
-
 ## 3. Usage
 
 ### Step 1: Upload Data
@@ -90,7 +86,6 @@ Export your mesh as:
 - `geometry.csv` — tabular coordinate of the geo data
 - `geometry.geo` — mesh input file for finite element analysis through [GMSH](https://gmsh.info/) 
 
----
 
 > ⚠️ **Tips & Warnings**
 >
@@ -98,7 +93,6 @@ Export your mesh as:
 > - When using `.roi` input, consider increasing wall thickness to improve polygon closure
 > - Use higher smoothing values to improve mesh quality in large or irregular cells
 
----
 
 ## 4. Citation
 
