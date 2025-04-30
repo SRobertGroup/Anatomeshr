@@ -1,4 +1,4 @@
-[![DOI](https://zenodo.org/badge/971190779.svg)](https://doi.org/10.5281/zenodo.15309368)
+[![DOI](https://zenodo.org/badge/971190779.svg)](https://doi.org/10.5281/zenodo.15309368) [![Launch App](https://img.shields.io/badge/Launch%20App-Shiny-blue?logo=R)](https://anatomeshr.serve.scilifelab.se/)
 
 # Anatomeshr
 
@@ -12,7 +12,7 @@
 
 ## 1. About
 
-**Anatomeshr** is a user-friendly **Shiny app** that converts 2D plant tissue image data into **finite element-compatible meshes** for biomechanical simulations.
+[**Anatomeshr**](https://anatomeshr.serve.scilifelab.se/) is a user-friendly **Shiny app** that converts 2D plant tissue image data into **finite element-compatible meshes** for biomechanical simulations.
 
 This tool bridges high-resolution anatomical imaging (CellSeT, ImageJ) and simulation frameworks like [**BVPy**](https://mosaic.gitlabpages.inria.fr/bvpy/), providing:
 
@@ -26,6 +26,7 @@ This tool bridges high-resolution anatomical imaging (CellSeT, ImageJ) and simul
   - Cell Tags to easily mark boundary conditions 
 - Seamless integration with finite element software (e.g., Fenics/BVPy)
 
+[**Start the Shiny app**](https://anatomeshr.serve.scilifelab.se/)
 
 ## 2. Installation
 
