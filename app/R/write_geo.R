@@ -13,7 +13,7 @@
 
 
 write_geo <- function(data, dim = 2, path_geo, Celldomain =F){
-  
+  `%!in%` <- compose(`!`, `%in%`)
   date = Sys.time()
   x1 = paste0('// Gmsh project created on ', date,'\nSetFactory("OpenCASCADE");\n//+\n')
   

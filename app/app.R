@@ -249,10 +249,10 @@ server <- function(input, output, session) {
     content = function(file) {
       switch(input$export_type,
              "PNG" = {
-               png(file, width = 800, height = 800)
-               root_data()%>%
+               req(root_data())
+               pl = root_data() %>%
                  ggplot()+
-                 geom_polygon(aes(x,y, group = id_cell, fill = type), colour = "white", alpha = 0.5)+
+                 geom_polygon(aes(x,y, group = id_cell, fill = type), colour = "white")+
                  viridis::scale_fill_viridis(discrete = T)+
                  theme_classic()+
                  coord_fixed()+
@@ -262,14 +262,14 @@ server <- function(input, output, session) {
                        axis.ticks=element_blank(),
                        axis.title.x=element_blank(),
                        axis.title.y=element_blank())
-               dev.off()
+               ggsave(file, plot = pl, width = 8, height = 8, dpi = 100)
              },
              
              "SVG" = {
-               svg(file, width = 8, height = 8)
-               root_data()%>%
+               req(root_data())
+               pl = root_data()%>%
                  ggplot()+
-                 geom_polygon(aes(x,y, group = id_cell, fill = type), colour = "white", alpha = 0.5)+
+                 geom_polygon(aes(x,y, group = id_cell, fill = type), colour = "white")+
                  viridis::scale_fill_viridis(discrete = T)+
                  theme_classic()+
                  coord_fixed()+
@@ -279,7 +279,7 @@ server <- function(input, output, session) {
                        axis.ticks=element_blank(),
                        axis.title.x=element_blank(),
                        axis.title.y=element_blank())
-               dev.off()
+               ggsave(file, plot = pl, width = 8, height = 8)
              },
              
              "CSV" = {
